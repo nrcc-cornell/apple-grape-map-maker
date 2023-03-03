@@ -1,0 +1,22 @@
+FROM python:3.10-slim
+
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ca-certificates \
+		curl \
+		netbase \
+		wget \
+	; \
+	rm -rf /var/lib/apt/lists/*
+
+# Minimum Dependencies
+RUN pip install aiohttp numpy scipy python-dateutil Pillow moviepy
+
+########################
+# May need configuration
+########################
+USER 1000:1000
+########################
+
+ENV PYTHONPATH "${PYTHONPATH}:/"

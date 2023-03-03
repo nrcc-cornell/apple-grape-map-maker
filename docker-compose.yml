@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  apple_grape_data:
+    image: python_base:1
+    command: bash
+    volumes:
+      - ./apple_grape_data:/apple_grape_data
+      - ./data_txts:/data_txts
+
+  apple_grape_maps:
+    image: mapper:1
+    working_dir: /
+    command: bash
+    volumes:
+      - ./apple_grape_maps:/apple_grape_maps
+      - ./data_txts:/data_txts
+      - ./maps:/maps
+
+  apple_grape_animations:
+    image: python_base:1
+    command: bash
+    volumes:
+      - ./apple_grape_maps:/apple_grape_maps
+      - ./maps:/maps
