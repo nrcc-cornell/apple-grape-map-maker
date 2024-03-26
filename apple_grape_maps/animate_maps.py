@@ -4,11 +4,17 @@ import multiprocessing as mp
 import moviepy.editor as mov
 from datetime import datetime
 
-# Announce completion of a map
-def say_done(name):
-  print(name, 'is animated!')
+def make_animations(dir, name, map_type):
+  is_feb_thru_july = map_type in ['gdds','stage','kill_prob']
+  is_sept_to_sept = map_type == 'chill'
+  is_dec_thru_june = map_type == 'hardiness'
+  is_oct_thru_june = map_type == 'injury_pot'
 
-def make_animations(dir, name):
+  # Dont add to animation if out of season
+  today = datetime.now()
+  if (is_feb_thru_july and (today.month == 1 or today.month > 7)) or (is_dec_thru_june and (7 <= today.month <= 11)) or (is_oct_thru_june and (7 <= today.month <= 9)):
+    return 'Out of Season, not added to animation'
+
   # Define file locations
   map_path = os.path.join(dir, name + '_map.png')
   gif_path = os.path.join(dir, name + '_map.gif')
@@ -20,23 +26,50 @@ def make_animations(dir, name):
   
   # Add new map to gif or create gif if there isn't one
   try:
+    # Raise error to force refresh the animation at the beginning of the season
+    if (today.day == 1 and ((is_feb_thru_july and today.month == 2) or (is_dec_thru_june and today.month == 12) or (is_oct_thru_june and today.month == 10) or (is_sept_to_sept and today.month == 9))):
+      raise 'Restart GIF'
+    
     with Image.open(gif_path) as animation:
       frames = ImageSequence.all_frames(animation)
       
+      ########################################
+      ########################################
+      ### THIS IS A ONE-TIME EXECUTION SECTION
+      ###   THAT IS MEANT TO SHORTEN A GIF FROM
+      ###   OVER ONE YEAR OF MAPS TO JUST THE
+      ###   CURRENT YEARS MAPS. THIS SHOULD
+      ###   ONLY EXECUTE ONCE IN MARCH OF 2024
+      ###   AND CAN THEN BE REMOVED IN A LATER
+      ###   UPDATE!
+      ########################################
+      ########################################
+
+      if len(frames) > 370 and today.month == 3 and today.year == 2024:
+        if is_feb_thru_july :
+          frames = frames[331:]
+        elif is_dec_thru_june:
+          frames = frames[269:]
+        elif is_oct_thru_june:
+          frames = frames[208:]
+        elif is_sept_to_sept:
+          frames = frames[178:]
+
+      ########################################
+      ########################################
+
       # Add frame on first run of day (10:15am EST), otherwise replace last frame
       if 15 < datetime.utcnow().hour:
         frames.pop()
       
       frames.append(im)
     frames[0].save(gif_path, save_all=True, append_images=frames[1:], duration=250, loop=0)
-  except Exception as e:
+  except:
     im.save(gif_path, save_all=True, append_images=[im], duration=250, loop=0)
 
   # Convert gif to mp4 to make file smaller for web use
   gif = mov.VideoFileClip(gif_path)
   gif.write_videofile(mp4_path, logger=None)
-  
-  return name
 
 def main():
   # Initial set up
@@ -65,7 +98,9 @@ def main():
     for folder in contents['folders']:
       folder_path = os.path.join(project_path, folder)
       for species in species_list:
-        pool.apply_async(make_animations, args=(folder_path, species), callback=say_done)
+        if (folder == 'chill' and species != 'chill_accumulations') or (species == 'chill_accumulations' and folder != 'chill'):
+          continue
+        pool.apply_async(make_animations, args=(folder_path, species, folder))
 
   # End multiprocessing
   pool.close()
