@@ -1,6 +1,5 @@
+import datetime, os, math
 import asyncio
-import datetime
-import os
 import aiohttp
 import numpy as np
 from scipy.interpolate import splrep, splev
@@ -21,11 +20,24 @@ def chill_value(deg_f):
     if deg_f <= 73.76: return -1.5
     if deg_f >  73.76: return -2
 
+def baskerville_emin(mint, maxt, baset):
+  avgt = (mint + maxt) / 2
+  if mint >= baset:
+    dd = max(avgt - baset, 0)
+  elif maxt <= baset:
+    dd = 0
+  else:
+    tamt = (maxt - mint) /  2
+    t1 = math.asin((baset - avgt) /  tamt)
+    dd =  round(max((((tamt * math.cos(t1)) - ((baset - avgt) * ((3.14 / 2.0) - t1))) / 3.14), 0), 2)
+  return dd
+
 def acis_to_data_txts(data, lon, lat, target_dir):
     # Convert data to numpy array because it is much faster, use it to group data and calculate a spline function
     np_data = np.array(data['data'])
     dates = np_data[:,0]
-    gdds = np_data[:,4].astype(float)
+    v_be = np.vectorize(baskerville_emin)
+    gdds = v_be(np_data[:,2].astype(float), np_data[:,1].astype(float), 43)
     temps = np.column_stack((np_data[:,2],np_data[:,1])).flatten().astype(int)
     xs = np.arange(0, len(temps) * 12, 12)
     curve = splrep(xs, temps)
@@ -44,15 +56,15 @@ def acis_to_data_txts(data, lon, lat, target_dir):
             hr_chill = chill_value(temp)
             sums['chill_accumulations'] = max(0, sums['chill_accumulations'] + hr_chill)
         
-        if sums['chill_accumulations'] > 1000:
+        if sums['chill_accumulations'] > 1000 or threshold > 1000:
             if threshold == 1000:
                 threshold = 1100
             else:
                 sums['gdd_accumulations_1000'] += gdds[date_idx]
         
-        if sums['chill_accumulations'] > 1100:
-            if threshold == 100:
-                threshold == 2000
+        if sums['chill_accumulations'] > 1100 or threshold > 1100:
+            if threshold == 1100:
+                threshold = 2000
             else:
                 sums['gdd_accumulations_1100'] += gdds[date_idx]
 
@@ -76,7 +88,7 @@ async def gather_data(session, limit, lat, lon, start_date, fail_list):
     # Set up for ACIS call
     acis_start_date = str(start_date.year - (1 if start_date.month < 9 else 0)) + '-08-31'
     acis_end_date = start_date.strftime('%Y-%m-%d')
-    acis_input_dict = {"loc":str(lon) + ',' + str(lat),"sdate":acis_start_date,"edate":acis_end_date,"grid":"nrcc-model","elems":[{"name":"maxt"},{"name":"mint"}, {"name":"avgt"},{"name":"gdd","base":43}]}
+    acis_input_dict = {"loc":str(lon) + ',' + str(lat),"sdate":acis_start_date,"edate":acis_end_date,"grid":"nrcc-model","elems":[{"name":"maxt"},{"name":"mint"}, {"name":"avgt"}]}
     acis_url = 'https://grid2.rcc-acis.org/GridData'
     
     # Attempt to get data from both APIs, if either fail or timeout (set when ClientSession is created) store coordinates for showing failures and return empty results
@@ -100,7 +112,7 @@ async def gather_data(session, limit, lat, lon, start_date, fail_list):
         acis_data['data'].pop(-1)
 
     # Add first forecast to ACIS to be used in the spline calculation
-    acis_data['data'] = acis_data['data'] + [[day[0], round(float(day[1])), round(float(day[2])), 0, 0] for day in [locHrly_data['dlyFcstData'][0]]]
+    acis_data['data'] = acis_data['data'] + [[day[0], round(float(day[1])), round(float(day[2])), 0] for day in [locHrly_data['dlyFcstData'][0]]]
     return acis_data
 
 
