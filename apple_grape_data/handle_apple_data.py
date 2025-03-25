@@ -3,15 +3,15 @@ import os
 # GLOBALS
 apples = [{
     'name': 'red_delicious',
-    'bounds': [85,121,175,233,295,382,484],
+    'bounds': [97,137,195,248,336,433,550],
     'sum_name': 'gdd_accumulations_1000'
 },{
     'name': 'empire',
-    'bounds': [97,132,192,248,331,424,539],
+    'bounds': [97,103,186,233,297,393,500],
     'sum_name': 'gdd_accumulations_1100'
 },{
     'name': 'mcIntosh',
-    'bounds': [91,107,170,224,288,384,492],
+    'bounds': [85,122,178,233,294,385,484],
     'sum_name': 'gdd_accumulations_1100'
 }]
 

@@ -7,11 +7,11 @@ output_path = sys.argv[5]
 
 # bounds = ['stip','gtip','ghalf','cluster','pink','bloom','petalfall']
 if name == 'empire':
-  bounds = [0,97,132,192,248,331,424,539,99999]
+  bounds = [0,97,103,186,233,297,393,500,99999]
 elif name == 'mcIntosh':
-  bounds = [0,91,107,170,224,288,384,492,99999]
+  bounds = [0,85,122,178,233,294,385,484,99999]
 elif name == 'red_delicious':
-  bounds = [0,85,121,175,233,295,382,484,99999]
+  bounds = [0,97,137,195,248,336,433,550,99999]
 
 map_input = {
 	'area': 'northeast',
