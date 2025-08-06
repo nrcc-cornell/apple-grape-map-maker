@@ -1,5 +1,7 @@
 # apple-grape-map-maker
 
+Creates apple and grape maps for use on NRCC’s page in the “Analyses for Industry” tab.
+
 ## Dependency
 
 You must have a Docker container called `mapper:1` containing the code for the mapper program from `https://github.coecis.cornell.edu/be99/mapper`.
